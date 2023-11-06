@@ -9,6 +9,7 @@ use BotMan\BotMan\Messages\Outgoing\Question;
 
 class MotorPurchaseConversation extends Conversation
 {
+  protected $nomor_admin = '6285839023590';
   protected $name;
   protected $location;
   protected $brand;
@@ -156,26 +157,30 @@ class MotorPurchaseConversation extends Conversation
 
   public function confirmDetails()
   {
-    $this->say("Anda akan terhubung dengan sales dengan detail data.");
-    $this->say("Nama: $this->name");
-    $this->say("Domisili: $this->location");
-    $this->say("Merk: $this->brand");
-    $this->say("Kategori: $this->category");
-    $this->say("Type motor: $this->type");
-    $this->say("Metode Pembayaran: $this->paymentMethod");
-    $this->say("Leasing: $this->leasing");
-    $this->say("Tenor: $this->tenor");
+    $this->say(
+      "Anda akan terhubung dengan sales dengan detail data. <br>" .
+        "Nama: <strong>$this->name</strong> <br>" .
+        "Domisili: <strong>$this->location</strong><br>" .
+        "Merk: <strong>$this->brand</strong><br>" .
+        "Kategori: <strong>$this->category</strong><br>" .
+        "Type motor: <strong>$this->type</strong><br>" .
+        "Metode Pembayaran: <strong>$this->paymentMethod</strong><br>" .
+        "Leasing: <strong>$this->leasing</strong><br>" .
+        "Tenor: <strong>$this->tenor</strong>"
+    );
 
     $question = Question::create("Apakah data tersebut sudah sesuai?")
       ->addButtons([
-        Button::create('Y')->value('Y'),
-        Button::create('N')->value('N'),
+        Button::create('Ya')->value('Y'),
+        Button::create('Tidak')->value('N'),
       ]);
 
     $this->ask($question, function (Answer $answer) {
       if ($answer->isInteractiveMessageReply()) {
         if ($answer->getValue() === 'Y') {
           $this->say('Chat customer service sekarang. !');
+          $whatsAppUrl = $this->createWhatsAppMessageUrl();
+          $this->say("Silakan <a href=\"{$whatsAppUrl}\" target=\"_blank\">klik di sini</a> untuk chat dengan customer service kami via WhatsApp.");
         } else {
           $this->askLocation();
         }
@@ -187,5 +192,17 @@ class MotorPurchaseConversation extends Conversation
   {
     // This will be called immediately
     $this->askName();
+  }
+
+
+  protected function createWhatsAppMessageUrl()
+  {
+    $base_url = "https://wa.me/{$this->nomor_admin}?text=";
+    $message = "Halo admin, nama saya {$this->name}, saya ingin membeli unit {$this->brand} {$this->type} dengan tenor {$this->tenor} bulan menggunakan leasing {$this->leasing}.";
+
+    // Encode the message for URL
+    $url_message = urlencode($message);
+
+    return $base_url . $url_message;
   }
 }
