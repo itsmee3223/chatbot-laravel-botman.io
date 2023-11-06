@@ -109,7 +109,11 @@ class MotorPurchaseConversation extends Conversation
       if ($answer->isInteractiveMessageReply()) {
         $this->paymentMethod = $answer->getValue();
         $this->say("Metode pembayaran yang Anda pilih adalah: $this->paymentMethod");
-        $this->askLeasing();
+        if ($this->paymentMethod === 'Cash') {
+          $this->confirmDetails();
+        } else {
+          $this->askLeasing();
+        }
       }
     });
   }
@@ -157,17 +161,20 @@ class MotorPurchaseConversation extends Conversation
 
   public function confirmDetails()
   {
-    $this->say(
-      "Anda akan terhubung dengan sales dengan detail data. <br>" .
-        "Nama: <strong>$this->name</strong> <br>" .
-        "Domisili: <strong>$this->location</strong><br>" .
-        "Merk: <strong>$this->brand</strong><br>" .
-        "Kategori: <strong>$this->category</strong><br>" .
-        "Type motor: <strong>$this->type</strong><br>" .
-        "Metode Pembayaran: <strong>$this->paymentMethod</strong><br>" .
-        "Leasing: <strong>$this->leasing</strong><br>" .
-        "Tenor: <strong>$this->tenor</strong>"
-    );
+    $message = "Anda akan terhubung dengan sales dengan detail data. <br>" .
+      "Nama: <strong>$this->name</strong> <br>" .
+      "Domisili: <strong>$this->location</strong><br>" .
+      "Merk: <strong>$this->brand</strong><br>" .
+      "Kategori: <strong>$this->category</strong><br>" .
+      "Type motor: <strong>$this->type</strong><br>" .
+      "Metode Pembayaran: <strong>$this->paymentMethod</strong><br>";
+
+    if ($this->paymentMethod !== 'Cash') {
+      $message .= "Leasing: <strong>$this->leasing</strong><br>" .
+        "Tenor: <strong>$this->tenor</strong><br>";
+    }
+
+    $this->say($message);
 
     $question = Question::create("Apakah data tersebut sudah sesuai?")
       ->addButtons([
@@ -198,11 +205,14 @@ class MotorPurchaseConversation extends Conversation
   protected function createWhatsAppMessageUrl()
   {
     $base_url = "https://wa.me/{$this->nomor_admin}?text=";
-    $message = "Halo admin, nama saya {$this->name}, saya ingin membeli unit {$this->brand} {$this->type} dengan tenor {$this->tenor} bulan menggunakan leasing {$this->leasing}.";
+    if ($this->paymentMethod === 'Cash') {
+      $message = "Halo admin, nama saya {$this->name}, saya ingin membeli unit {$this->brand} {$this->type} dengan pembayaran tunai (cash).";
+    } else {
+      $message = "Halo admin, nama saya {$this->name}, saya ingin membeli unit {$this->brand} {$this->type} dengan tenor {$this->tenor} bulan menggunakan leasing {$this->leasing}.";
+    }
 
     // Encode the message for URL
     $url_message = urlencode($message);
-
     return $base_url . $url_message;
   }
 }
